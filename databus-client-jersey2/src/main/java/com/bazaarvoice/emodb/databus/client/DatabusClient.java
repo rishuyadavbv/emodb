@@ -35,11 +35,7 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -252,6 +248,15 @@ public class DatabusClient implements Databus, Closeable {
             Iterator<Event> events = response.getEntity(new TypeReference<Iterator<Event>>() {
             });
 
+            List<Event> loggedEvents = new ArrayList<>();
+            while (events.hasNext()) {
+                Event event = events.next();
+                // Log the event details using _log
+                _log.info("Retrieved event:{} ", event); // Adjust log level as needed
+                loggedEvents.add(event);
+            }
+
+
             boolean moreEvents;
             String databusEmpty = response.getFirstHeader(POLL_DATABUS_EMPTY_HEADER);
             if (databusEmpty != null) {
@@ -262,7 +267,7 @@ public class DatabusClient implements Databus, Closeable {
                 // is empty based on whether any results were returned.
                 moreEvents = events.hasNext();
             }
-            return new PollResult(events, limit, moreEvents);
+            return new PollResult(loggedEvents.iterator(), limit, moreEvents);
 
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
@@ -306,6 +311,9 @@ public class DatabusClient implements Databus, Closeable {
                     .queryParam("partitioned", _partitionSafe)
                     .build();
             _log.debug("Uri for acknowledge call:{} ", uri.toString());
+            for (String eventKey : eventKeys) {
+                _log.debug("Acknowledging event with key: {}", eventKey);
+            }
             Failsafe.with(_retryPolicy)
                     .run(() -> _client.resource(uri)
                             .type(MediaType.APPLICATION_JSON_TYPE)
