@@ -45,7 +45,7 @@
         <dependency>
             <groupId>com.bazaarvoice.curator</groupId>
             <artifactId>test</artifactId>
-            <scope>test</scope>
+            <scope>test </scope>
         </dependency>
         <dependency>
             <groupId>com.bazaarvoice.astyanax</groupId>
